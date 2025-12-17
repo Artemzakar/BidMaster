@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Сервис Базы Данных
+  db:
+    image: postgres:15-alpine
+    container_name: bidmaster_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data  # Сохраняет данные при перезапуске
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql # Авто-запуск скрипта при первом старте
+
+  # Сервис PgAdmin (чтобы смотреть в базу через браузер)
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: bidmaster_pgadmin
+      restart: always
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@admin.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      ports:
+        - "5050:80"
+      depends_on:
+        - db
+      volumes:
+        - ./pgadmin-data:/var/lib/pgadmin
+
+  backend:
+      build: .
+      ports:
+        - "8000:8000"
+      depends_on:
+        - db
+      volumes:
+        - .:/app
+      environment:
+        - DB_HOST=db
+        - DB_NAME=${DB_NAME}
+        - DB_USER=${DB_USER}
+        - DB_PASSWORD=${DB_PASSWORD}
