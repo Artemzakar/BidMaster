@@ -1,3 +1,4 @@
+-- 1. Функция считаем рейтинг на основе количества ставок и потраченных денег.
 CREATE OR REPLACE FUNCTION get_user_activity_score(target_user_id INT)
 RETURNS DECIMAL(10, 2) AS $$
 DECLARE
@@ -18,7 +19,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+-- 2. Функция для построения отчета по аукционам за выбранный период.
 CREATE OR REPLACE FUNCTION get_auction_stats(start_date TIMESTAMP, end_date TIMESTAMP)
 RETURNS TABLE (
     auction_status VARCHAR,

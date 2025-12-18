@@ -6,7 +6,7 @@ from faker import Faker
 
 fake = Faker()
 
-# --- КОНФИГУРАЦИЯ ---
+# Настройки количества генерируемых записей
 NUM_USERS = 1000
 NUM_CATEGORIES = 10
 NUM_ITEMS = 2000
@@ -14,28 +14,29 @@ NUM_AUCTIONS = 1500
 NUM_BIDS = 200000
 NUM_REVIEWS = 500
 NUM_LOGS = 1000
-NUM_AUTO_BIDS = 3000  # Новая таблица
-NUM_ESCROWS = 400  # Новая таблица
+NUM_AUTO_BIDS = 3000
+NUM_ESCROWS = 400
 
 output_dir = "data_import"
 os.makedirs(output_dir, exist_ok=True)
 
 
 def generate_users():
-    print("1. Users...")
+    print("Generating Users...")
     with open(f"{output_dir}/users.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["username", "email", "password_hash", "role", "balance"])
         for i in range(NUM_USERS):
             username = f"{fake.user_name()}_{i}"
             email = f"{username}@example.com"
+            # 5% пользователей — эксперты
             role = "expert" if random.random() < 0.05 else "user"
             balance = round(random.uniform(0, 1000000), 2)
             writer.writerow([username, email, "hashed_secret", role, balance])
 
 
 def generate_categories():
-    print("2. Categories...")
+    print("Generating Categories...")
     with open(f"{output_dir}/categories.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["name", "description"])
@@ -46,7 +47,7 @@ def generate_categories():
 
 
 def generate_items():
-    print("3. Items...")
+    print("Generating Items...")
     with open(f"{output_dir}/items.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["owner_id", "title", "description", "year_created", "is_verified"])
@@ -60,7 +61,7 @@ def generate_items():
 
 
 def generate_item_categories():
-    print("4. Item Categories...")
+    print("Generating Item Categories...")
     with open(f"{output_dir}/item_categories.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["item_id", "category_id"])
@@ -70,7 +71,7 @@ def generate_item_categories():
 
 
 def generate_auctions():
-    print("5. Auctions...")
+    print("Generating Auctions...")
     with open(f"{output_dir}/auctions.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["item_id", "start_time", "end_time", "start_price", "current_price", "status"])
@@ -78,16 +79,19 @@ def generate_auctions():
             item_id = i
             start_time = fake.date_time_between(start_date='-60d', end_date='now')
             end_time = start_time + timedelta(days=random.randint(1, 14))
+
+            # Вычисляем статус в зависимости от текущего времени
             if end_time < datetime.now():
                 status = 'finished'
             else:
                 status = 'active'
+
             price = round(random.uniform(100, 5000), 2)
             writer.writerow([item_id, start_time, end_time, price, price, status])
 
 
 def generate_bids():
-    print("6. Bids...")
+    print("Generating Bids...")
     with open(f"{output_dir}/bids.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["auction_id", "user_id", "amount", "bid_time"])
@@ -100,7 +104,7 @@ def generate_bids():
 
 
 def generate_expert_reviews():
-    print("7. Expert Reviews...")
+    print("Generating Expert Reviews...")
     with open(f"{output_dir}/expert_reviews.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["item_id", "expert_id", "verdict", "comments", "review_date"])
@@ -114,8 +118,9 @@ def generate_expert_reviews():
 
 
 def generate_auto_bids():
-    print("8. Auto Bids...")
-    # Здесь важно соблюсти UNIQUE(user_id, auction_id)
+    print("Generating Auto Bids...")
+    # Используем set для контроля уникальности пар (user, auction),
+    # иначе БД вернет ошибку при вставке
     seen_pairs = set()
     with open(f"{output_dir}/auto_bids.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -137,7 +142,7 @@ def generate_auto_bids():
 
 
 def generate_escrow_accounts():
-    print("9. Escrow Accounts...")
+    print("Generating Escrow Accounts...")
     with open(f"{output_dir}/escrow_accounts.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["auction_id", "buyer_id", "amount", "status", "updated_at"])
@@ -151,7 +156,7 @@ def generate_escrow_accounts():
 
 
 def generate_audit_log():
-    print("10. Audit Log...")
+    print("Generating Audit Log...")
     with open(f"{output_dir}/audit_log.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["table_name", "operation_type", "record_id", "changed_at", "changed_by"])
@@ -175,4 +180,4 @@ if __name__ == "__main__":
     generate_auto_bids()
     generate_escrow_accounts()
     generate_audit_log()
-    print(f"\n✅ Файлы обновлены в {output_dir}/. Все 11 таблиц!")
+    print(f"\nФайлы обновлены в {output_dir}/. Все 11 таблиц")

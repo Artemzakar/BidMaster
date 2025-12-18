@@ -13,7 +13,8 @@ from app.models import (
 
 router = APIRouter(prefix="/import", tags=["Import"])
 
-# Добавили auto_bids.csv и escrow_accounts.csv
+# Маппинг: имя файла -> (Модель БД, Приоритет загрузки)
+# Приоритет важен, чтобы не нарушить Foreign Key (сначала создаем User, потом Bid)
 CSV_MAPPING = {
     "users.csv": (User, 1),
     "categories.csv": (Category, 2),
@@ -21,8 +22,8 @@ CSV_MAPPING = {
     "item_categories.csv": (ItemCategory, 4),
     "auctions.csv": (Auction, 5),
     "bids.csv": (Bid, 6),
-    "auto_bids.csv": (AutoBid, 7),  # НОВОЕ
-    "escrow_accounts.csv": (EscrowAccount, 8),  # НОВОЕ
+    "auto_bids.csv": (AutoBid, 7),
+    "escrow_accounts.csv": (EscrowAccount, 8),
     "expert_reviews.csv": (ExpertReview, 9),
     "audit_log.csv": (AuditLog, 10)
 }
@@ -33,6 +34,7 @@ async def batch_import_data(
         files: List[UploadFile],
         db: Session = Depends(get_db)
 ):
+    # Генерируем ID пакета, чтобы в логах отследить конкретную загрузку
     batch_id = str(uuid.uuid4())
 
     log_start = SystemLog(
@@ -43,6 +45,7 @@ async def batch_import_data(
     db.add(log_start)
     db.commit()
 
+    # Сортируем файлы по приоритету из CSV_MAPPING
     sorted_files = sorted(
         files,
         key=lambda f: CSV_MAPPING.get(f.filename, (None, 99))[1]
@@ -65,6 +68,8 @@ async def batch_import_data(
                 decoded_content = content.decode("cp1251")
 
             csv_file = io.StringIO(decoded_content)
+
+            # Пытаемся автоматически определить разделитель (запятая или точка с запятой)
             try:
                 dialect = csv.Sniffer().sniff(decoded_content[:1024])
                 csv_reader = csv.DictReader(csv_file, dialect=dialect)
@@ -80,6 +85,7 @@ async def batch_import_data(
                     key = k.strip()
                     value = v.strip() if v else None
 
+                    # Ручная конвертация булевых значений из CSV
                     if key == "is_verified" and value:
                         clean_row[key] = (value == "True")
                     else:
@@ -88,6 +94,7 @@ async def batch_import_data(
                 rows.append(clean_row)
 
             if rows:
+                # Используем bulk_insert для скорости (вставка пачкой)
                 db.bulk_insert_mappings(model, rows)
                 db.commit()
 
@@ -102,6 +109,7 @@ async def batch_import_data(
                 report[file.filename] = "Empty file warning"
 
         except Exception as e:
+            # Если ошибка в конкретном файле — откатываем только его
             db.rollback()
             error_msg = f"Error: {str(e)}"
             report[file.filename] = error_msg

@@ -28,7 +28,6 @@ CREATE TABLE items (
 );
 
 -- 4. Связь Многие-ко-Многим: Предметы и Категории
--- Один предмет может быть и "Модерном", и "Скульптурой"
 CREATE TABLE item_categories (
     item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
     category_id INT REFERENCES categories(category_id) ON DELETE CASCADE,
@@ -101,7 +100,7 @@ CREATE TABLE audit_log (
 -- 11. Системные логи (для батчевой загрузки и ошибок)
 CREATE TABLE system_logs (
     log_id SERIAL PRIMARY KEY,
-    level VARCHAR(10) CHECK (level IN ('INFO', 'wARNING', 'ERROR')),
+    level VARCHAR(10) CHECK (level IN ('INFO', 'WARNING', 'ERROR')),
     source VARCHAR(50),
     message TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
