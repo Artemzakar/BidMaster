@@ -14,22 +14,29 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres-data:/var/lib/postgresql/data  # Сохраняет данные при перезапуске
-      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql # Авто-запуск скрипта при первом старте
+      - ./sql/init_db.sql:/docker-entrypoint-initdb.d/10_init_db.sql # Авто-запуск скрипта при первом старте
+      - ./sql/functions.sql:/docker-entrypoint-initdb.d/20_functions.sql
+      - ./sql/views.sql:/docker-entrypoint-initdb.d/30_views.sql
+      - ./sql/triggers.sql:/docker-entrypoint-initdb.d/40_triggers.sql
 
   # Сервис PgAdmin (чтобы смотреть в базу через браузер)
   pgadmin:
-      image: dpage/pgadmin4
-      container_name: bidmaster_pgadmin
-      restart: always
-      environment:
-        PGADMIN_DEFAULT_EMAIL: admin@admin.com
-        PGADMIN_DEFAULT_PASSWORD: admin
-      ports:
-        - "5050:80"
-      depends_on:
-        - db
-      volumes:
-        - ./pgadmin-data:/var/lib/pgadmin
+        image: dpage/pgadmin4
+        container_name: bidmaster_pgadmin
+        restart: always
+        environment:
+          PGADMIN_DEFAULT_EMAIL: admin@admin.com
+          PGADMIN_DEFAULT_PASSWORD: admin
+#          # Эта настройка говорит PgAdmin'у подтянуть конфиг при запуске
+#          PGADMIN_CONFIG_SERVER_MODE: "False"
+        ports:
+          - "5050:80"
+        depends_on:
+          - db
+        volumes:
+          - ./pgadmin-data:/var/lib/pgadmin
+#          # ДОБАВЬ ВОТ ЭТУ СТРОКУ:
+#          - ./servers.json:/pgadmin4/servers.json
 
   backend:
       build: .

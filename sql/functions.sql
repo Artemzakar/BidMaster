@@ -28,7 +28,7 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT
-        status::VARCHAR,  -- Приводим к строке
+        status::VARCHAR,
         COUNT(*),
         COALESCE(SUM(current_price), 0)
     FROM auctions

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database import engine, Base
-from app.routers import importer, auctions
+from app.routers import importer, auctions, analytics
 
 # Создаем таблицы при старте (если их нет)
 Base.metadata.create_all(bind=engine)
@@ -14,6 +14,7 @@ app = FastAPI(
 # Подключаем наши маршруты
 app.include_router(importer.router)
 app.include_router(auctions.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 def read_root():
